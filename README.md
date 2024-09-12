@@ -1,6 +1,6 @@
 # redis_pubsub
 
-#### Redis_Playground is not part of pubsub it's a standalone program which implements some basic things redis performs.
+#### Redis_Playground is not part of pubsub it's a standalone program which implements some basic commands redis can performs.
 Follow these steps to get the application running locally. 
 
 ### 1. Clone the Repository
