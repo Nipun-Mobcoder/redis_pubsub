@@ -59,6 +59,54 @@ app.get('/set', rateLimiter({limit: 5,timer: 60, key: "set"}), async (req, res) 
     res.json({interStudents,unionStudents});
 })
 
+app.get('/stream', rateLimiter({ limit: 5, timer: 60, key: 'stream' }), async (req, res) => {
+    const flattenedData = {
+        coord_lon: 10.99,
+        coord_lat: 44.34,
+        weather_id: 501,
+        weather_main: "Rain",
+        weather_description: "moderate rain",
+        weather_icon: "10d",
+        base: "stations",
+        main_temp: 298.48,
+        main_feels_like: 298.74,
+        main_temp_min: 297.56,
+        main_temp_max: 300.05,
+        main_pressure: 1015,
+        main_humidity: 64,
+        main_sea_level: 1015,
+        main_grnd_level: 933,
+        visibility: 10000,
+        wind_speed: 0.62,
+        wind_deg: 349,
+        wind_gust: 1.18,
+        rain_h: 3.16,
+        clouds_all: 100,
+        dt: 1661870592,
+        sys_type: 2,
+        sys_id: 2075663,
+        sys_country: "IT",
+        sys_sunrise: 1661834187,
+        sys_sunset: 1661882248,
+        timezone: 7200,
+        id: 3163858,
+        name: "Zocca",
+        cod: 200
+    };
+
+    // Convert the object into an array of key-value pairs
+    const keyValuePairs = Object.entries(flattenedData).flat();
+
+    // Add the stream data with key-value pairs
+    // const res1 = await redis.xadd('weather', '*', ...keyValuePairs);
+    const res3 = await redis.xrange('weather', '-', '+')
+      console.log(res3);
+    // console.log(keyValuePairs,res1);
+    res.send(res3);
+});
+
+
+
 app.listen(5000, ()=> {
     console.log("Server running at 5000")
 })
