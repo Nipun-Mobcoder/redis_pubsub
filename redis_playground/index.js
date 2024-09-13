@@ -32,13 +32,13 @@ app.get('/lists', rateLimiter({limit: 5,timer: 60, key: "lists"}) , async (req,r
 })
 
 app.get('/hash', rateLimiter({limit: 5,timer: 60, key: "hash"}) , async (req,res) => {
-    await redis.hset("marks", {
-        "history": 67,
-        "math": 89,
-        "science": 81,
-        "englis": 77
-    })
-    await redis.expire("marks", 20)
+    // await redis.hset("marks", {
+    //     "history": 67,
+    //     "math": 89,
+    //     "science": 81,
+    //     "englis": 77
+    // })
+    // await redis.expire("marks", 20)
     const incrMath = await redis.hincrby("marks", "math", 4);
     console.log(incrMath)
     // const historyMarks = await redis.hget("marks", "history")
@@ -100,12 +100,31 @@ app.get('/stream', rateLimiter({ limit: 5, timer: 60, key: 'stream' }), async (r
     // Add the stream data with key-value pairs
     // const res1 = await redis.xadd('weather', '*', ...keyValuePairs);
     const res3 = await redis.xrange('weather', '-', '+')
-      console.log(res3);
+    const res5 = await redis.xread('STREAMS', )
+    const res4 = await redis.xlen('weather')
+      console.log(res3, res4);
     // console.log(keyValuePairs,res1);
     res.send(res3);
 });
 
+app.get('/sset', rateLimiter({ limit: 5, timer: 60, key: 'sset' }), async (req, res) => {
+    const res1 = await redis.zadd('studentRank', 
+        7, "Nipun",
+        5, "Harsh",
+        10, "Karan",
+        2, "Aditya",
+    )
 
+    const res2 = await redis.zrevrange('studentRank', 0, -1, "WITHSCORES");
+
+    const res3 = await redis.zrank('studentRank', 'Karan')
+
+
+    console.log(res1, res3)
+
+    res.json(res2)
+
+})
 
 app.listen(5000, ()=> {
     console.log("Server running at 5000")
