@@ -7,17 +7,20 @@ const app = express();
 
 app.use(json());
 
-app.get('/string', rateLimiter({limit: 5,timer: 60, key: "keys"}), async (req,res) => {
-    let photos = await redis.get("photos")
-    if(photos) {
-        console.log("data");
-        return res.json(JSON.parse(photos))
-    }
-    console.log("noData")
-    const {data} = await axios.get('https://jsonplaceholder.typicode.com/photos')
-    await redis.setex("photos", 20, JSON.stringify(data))
+app.get('/string', rateLimiter({limit: 5,timer: 60, key: "string"}), async (req,res) => {
+    // let photos = await redis.get("photos")
+    // if(photos) {
+    //     console.log("data");
+    //     return res.json(JSON.parse(photos))
+    // }
+    // console.log("noData")
+    // const {data} = await axios.get('https://jsonplaceholder.typicode.com/photos')
+    // await redis.setex("photos", 60, JSON.stringify(data))
     // await redis.expire("photos",20);
-    return res.json(data)
+    await redis.set("myKey", "Hello");
+    await redis.append("myKey", " World");
+    const data = await redis.get("myKey");
+    return res.send(data)
 })
 
 app.get('/lists', rateLimiter({limit: 5,timer: 60, key: "lists"}) , async (req,res) => {
@@ -27,8 +30,9 @@ app.get('/lists', rateLimiter({limit: 5,timer: 60, key: "lists"}) , async (req,r
     // await redis.lpop('arr')
     // await redis.rpush('arr', 'Harsh')
     const arr = await redis.lrange("arr",0,-1)
-    console.log(arr)
-    return res.json("Sent successfully")
+    const val = await redis.lindex("arr",1);
+    console.log(val)
+    return res.json(arr)
 })
 
 app.get('/hash', rateLimiter({limit: 5,timer: 60, key: "hash"}) , async (req,res) => {
@@ -36,24 +40,27 @@ app.get('/hash', rateLimiter({limit: 5,timer: 60, key: "hash"}) , async (req,res
     //     "history": 67,
     //     "math": 89,
     //     "science": 81,
-    //     "englis": 77
+    //     "english": 77
     // })
-    // await redis.expire("marks", 20)
+    await redis.expire("marks", 20)
+    const type = await redis.type("marks");
     const incrMath = await redis.hincrby("marks", "math", 4);
-    console.log(incrMath)
-    // const historyMarks = await redis.hget("marks", "history")
-    const marks = await redis.hgetall("marks");
+    let marks = await redis.hvals("marks");
+    console.log(incrMath, type, marks)
+    const historyMarks = await redis.hget("marks", "history")
+    // await redis.hdel("marks", "englis")
+    marks = await redis.hgetall("marks");
     return res.json(marks)
 })
 
 app.get('/set', rateLimiter({limit: 5,timer: 60, key: "set"}), async (req, res) => {
-    const res1 = await redis.sadd("history", ["Nipun", "Karan", "Harsh"] )
-    const res2 = await redis.sadd("math", ["Nipun", "Harsh"] )
-    const res3 = await redis.sadd("math", "Nipun" )
-    const res4 = await redis.sadd( "physics", "Karan" )
+    // const res1 = await redis.sadd("history", ["Nipun", "Karan", "Harsh"] )
+    // const res2 = await redis.sadd("math", ["Nipun", "Harsh"] )
+    // const res3 = await redis.sadd("math", "Nipun" )
+    // const res4 = await redis.sadd( "physics", "Karan" )
     
     const sMember = await redis.smembers("math")
-    console.log(res3, res4, sMember);
+    console.log( sMember );
     const interStudents = await redis.sinter('history','math')
     const unionStudents = await redis.sunion('history','physics')
     res.json({interStudents,unionStudents});
@@ -100,7 +107,7 @@ app.get('/stream', rateLimiter({ limit: 5, timer: 60, key: 'stream' }), async (r
     // Add the stream data with key-value pairs
     // const res1 = await redis.xadd('weather', '*', ...keyValuePairs);
     const res3 = await redis.xrange('weather', '-', '+')
-    const res5 = await redis.xread('STREAMS', )
+    // const res5 = await redis.xread('STREAMS', )
     const res4 = await redis.xlen('weather')
       console.log(res3, res4);
     // console.log(keyValuePairs,res1);
@@ -119,11 +126,30 @@ app.get('/sset', rateLimiter({ limit: 5, timer: 60, key: 'sset' }), async (req, 
 
     const res3 = await redis.zrank('studentRank', 'Karan')
 
-
     console.log(res1, res3)
 
     res.json(res2)
+})
 
+app.post('/json', rateLimiter({ limit: 5, timer: 60, key: 'json' }), async (req, res) => {
+    const jsonKey = 'bike:2';
+
+    const setResult = await redis.call('JSON.SET', jsonKey, '$', JSON.stringify(req.body));
+    console.log('JSON set result:', setResult);
+
+    const getResult = await redis.call('JSON.GET', jsonKey, '$'); 
+    console.log('JSON get result:',getResult, JSON.parse(getResult));
+
+    const updateResult = await redis.call('JSON.SET', jsonKey, '$.price', 5100);
+    console.log('JSON update result:', updateResult);
+
+    const updatedGetResult = await redis.call('JSON.GET', jsonKey, '$');
+    console.log('Updated JSON get result:', JSON.parse(updatedGetResult));
+
+    // const deleteResult = await redis.call('JSON.DEL', jsonKey, '$');
+    // console.log('JSON delete result:', deleteResult);
+
+    res.json(JSON.parse(updatedGetResult))
 })
 
 app.listen(5000, ()=> {

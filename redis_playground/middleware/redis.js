@@ -1,10 +1,12 @@
 import redis from '../client.js';
 
 export const rateLimiter = ({ limit = 5, timer = 60, key }) => async (req, res, next) => {
+    const userAgent = req.headers['user-agent'];
     const clientIp =   req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     const fullKey = `${clientIp}:${key}:request_count`;
     const requestCount = await redis.incr(fullKey);
     console.log(fullKey,requestCount);
+    await redis.incrby("myKey")
 
     if(requestCount === 1){
         await redis.expire(fullKey, timer);
@@ -15,3 +17,6 @@ export const rateLimiter = ({ limit = 5, timer = 60, key }) => async (req, res, 
     }
     next()
 } 
+
+//response handler
+//iosockets
